@@ -13,7 +13,7 @@ table{border-collapse:collapse;font-size:14px;width:100%}td,th{padding:6px;borde
 <h1>Kevin Hub</h1><p class=sub>Reports for Tyler, newest first.</p>
 <a class="card rep" href="music/"><span class=date>Oct 15, 2026</span><h2>Your Music Map & 25 Discovery Picks</h2><p>Ten years of Spotify listening, your eras, skip patterns, and new artists you've never played.</p><span class=chev>›</span></a>
 </main></div><script>// Client-side gate: only a salted PBKDF2-SHA256 hash is stored. Static site, so this is privacy-by-obscurity, not real security.
-const GATE={"salt": "1894e344e2a5d624d11e22c451ebe5f2", "iter": 200000, "hash": "2e23dfa20518759a263ab0e1b1d5f6a4a4a758dc70e3e452716967784b1b8b9e"};const KEY='kevinhub_ok';
+const GATE={"salt": "70492f4f7112fed81ece726ff01a0038", "iter": 100000, "hash": "b75e0b1fb73b2a243faa85d294a851cbb9bf07dca768feb1fe4baa2965f0a4e2"};const KEY='kevinhub_ok';
 const hx=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
 const salt=new Uint8Array(GATE.salt.match(/../g).map(h=>parseInt(h,16)));
 async function derive(code){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(code),'PBKDF2',false,['deriveBits']);return hx(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt,iterations:GATE.iter},k,256))}
