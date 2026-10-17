@@ -1,0 +1,156 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noindex,nofollow"><title>kevhub · Backend plan</title><style>:root{--bg:#f2f2f7;--card:#fff;--tx:#1c1c1e;--sub:#6e6e73;--ac:#007aff;--sep:#d1d1d6}
+@media(prefers-color-scheme:dark){:root{--bg:#000;--card:#1c1c1e;--tx:#f2f2f7;--sub:#98989f;--ac:#0a84ff;--sep:#38383a}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:17px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:760px;margin:auto;padding:24px 16px 64px}h1{font-size:34px;font-weight:700;margin:8px 0 2px}h2{font-size:22px;margin:0 0 8px}.sub,.note{color:var(--sub);font-size:15px}
+.card{display:block;background:var(--card);border-radius:14px;padding:18px;margin:16px 0;text-decoration:none;color:inherit;position:relative}
+.rep:active{opacity:.7}.rep p{color:var(--sub);margin:4px 24px 0 0}.date{font-size:13px;color:var(--sub);text-transform:uppercase}.chev{position:absolute;right:18px;top:50%;font-size:28px;color:var(--sep);transform:translateY(-50%)}
+img{width:100%;border-radius:8px}a{color:var(--ac)}.back{text-decoration:none;font-size:17px}
+table{border-collapse:collapse;font-size:14px;width:100%}td,th{padding:6px;border-bottom:1px solid var(--sep);text-align:left;vertical-align:top}.scroll{overflow-x:auto}
+.picks{list-style:none;padding:0}.pick{border-top:1px solid var(--sep);padding:12px 0}.pick p{margin:4px 0;color:var(--sub);font-size:15px}.links{font-size:15px}
+.tag{font-size:12px;padding:2px 8px;border-radius:10px;background:#34c75933;color:#248a3d}.tag.stretch{background:#ff950033;color:#c76c00}
+.nav{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:16px;padding:10px 16px;background:color-mix(in srgb,var(--bg) 72%,transparent);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:.5px solid var(--sep);overflow-x:auto;white-space:nowrap}
+.nav .home{font-weight:700;color:var(--tx);text-decoration:none;font-size:17px}.nav nav{display:flex;gap:14px}.nav nav a{text-decoration:none;font-size:15px}
+section,main{scroll-margin-top:56px}html{scroll-behavior:smooth}
+pre{background:var(--bg);border-radius:10px;padding:12px;overflow-x:auto;font:13px/1.45 ui-monospace,"SF Mono",Menlo,monospace}code{font:14px ui-monospace,"SF Mono",Menlo,monospace}
+.card h3{font-size:17px;margin:14px 0 4px}.card ul,.card ol{padding-left:20px;margin:6px 0}.card li{margin:3px 0}
+.win{border:2px solid var(--ac)}.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:15px}.kv b{color:var(--sub);font-weight:600}
+.you{font-size:12px;padding:2px 8px;border-radius:10px;background:#ff950033;color:#c76c00;white-space:nowrap}td.y{color:#248a3d}td.n{color:#d70015}
+</style></head><body>
+<header class=nav><a class=home href="../">kevhub</a><nav><a href="#rec">Pick</a><a href="#compare">Compare</a><a href="#primitives">Primitives</a><a href="#security">Security</a><a href="#plan">Plan</a><a href="#setup">Setup</a><a href="#details">Details</a></nav></header>
+<main>
+<span class=date>Oct 17, 2026 · Research only, nothing created yet</span>
+<h1>A tiny backend for kevhub</h1>
+<p class=sub>Right now kevhub can show you things but can't save anything you do on it. This plan gives every page a one-line <code>kevhub.save()</code> and gives Kevin a real database on the box. No passwords, no emailing results.</p>
+
+<section id=rec class="card win">
+<h2>Recommendation: Vercel Function + Neon Postgres</h2>
+<p>One small Vercel project (<code>kevhub-api</code>) with two or three endpoints, backed by a free Neon Postgres database added from the Vercel Marketplace. kevhub pages stay on GitHub Pages.</p>
+<h3>Why this one</h3>
+<ul>
+<li><b>Best for Kevin to work with.</b> It's real Postgres, so Kevin can just run <code>psql</code> or Python with the connection string. Each record's payload is stored as <code>jsonb</code>, so a new mini-app is just a new <code>app</code> name, with no migrations and no schema to declare. JSON queries, views, and indexes all work, and the docs (Postgres, Neon, Vercel) are about as good as docs get.</li>
+<li><b>You already have the pieces.</b> Your Vercel account is already connected to Kevin and has 6 projects, so no new vendor. Neon is billed through Vercel, so there's no separate account or card.</li>
+<li><b>$0 a month</b> at your scale, with plenty of headroom: 1M function calls and 100 compute-hours a month, 1 GB of storage. If you ever want it to always stay awake, that's about $1–5 a month.</li>
+<li><b>Nothing pauses for good.</b> The database sleeps after 5 minutes idle and wakes in a few hundred milliseconds. Unlike Supabase's free plan, it never gets shut down for a week of inactivity, which matters when you're only on it every couple of weeks.</li>
+</ul>
+<h3>Runner-up: Cloudflare Workers + D1</h3>
+<p>It's the fastest (practically no cold start), free, and has a great CLI (<code>wrangler d1 execute</code>). It loses because it's a new account plus an API token to set up, and its SQLite JSON support is a bit weaker than Postgres <code>jsonb</code>. A good choice if we ever move kevhub's hosting to Cloudflare.</p>
+<div class=kv><b>Monthly cost</b><span>$0 expected. About $1–5 if we turn off sleep. Ceiling well under $10.</span><b>Your steps</b><span>About 3 clicks plus one token (see <a href="#setup">Setup</a>)</span><b>Hosting change</b><span>None. Pages stay at tyler-simons.github.io/kevhub</span></div>
+</section>
+
+<section id=compare class=card>
+<h2>Comparison</h2>
+<p class=note>Pricing from each vendor's pricing page, Oct 2026. Personal scale means a few hundred writes a month and Kevin reading a few times a day.</p>
+<div class=scroll><table>
+<tr><th>Option</th><th>Free tier</th><th>Real cost for you</th><th>Kevin from the box</th><th>New collection</th><th>Cold start</th><th>Sleep / pause risk</th><th>New account?</th><th>Lock-in</th></tr>
+<tr><td><b>Vercel Fn + Neon</b> ✓</td><td>1M fn calls, 4 CPU-h; Neon 100 CU-h, 1 GB</td><td>$0 (≈$1–5 always-on)</td><td class=y>psql/Python SQL, jsonb</td><td class=y>Just a new app name</td><td>~0.3–0.5 s if DB asleep</td><td class=y>Sleeps, auto-wakes</td><td class=y>No (in your Vercel)</td><td>Low: plain Postgres</td></tr>
+<tr><td><b>Vercel Fn + Upstash Redis</b></td><td>500K commands, 256 MB</td><td>$0</td><td>redis-cli / REST, no SQL</td><td>Key prefix</td><td>Fast</td><td class=y>None</td><td class=y>No</td><td>Low, but querying is weak</td></tr>
+<tr><td><b>Supabase</b></td><td>500 MB DB, unlimited API</td><td>$0, or $25 Pro to stop pauses</td><td class=y>psql + auto REST</td><td>Table + RLS policy</td><td>Fast</td><td class=n>Paused after 7 days idle</td><td class=n>Yes</td><td>Low: Postgres</td></tr>
+<tr><td><b>Cloudflare Worker + D1</b></td><td>100K req/day; 5M reads, 100K writes/day</td><td>$0 (or $5 Workers Paid)</td><td class=y>wrangler d1 SQL</td><td class=y>JSON column</td><td class=y>~0 ms</td><td class=y>None (hard daily caps)</td><td class=n>Yes + token</td><td>Med: D1/Workers APIs</td></tr>
+<tr><td><b>Cloudflare Worker + KV</b></td><td>100K reads, 1K writes/day</td><td>$0</td><td>wrangler kv, no queries</td><td>Key prefix</td><td class=y>~0 ms</td><td class=y>None</td><td class=n>Yes</td><td>Med</td></tr>
+<tr><td><b>Firebase Firestore</b></td><td>50K reads, 20K writes/day</td><td>$0</td><td class=n>SDK/REST only, no SQL</td><td class=y>Schemaless</td><td>Fast</td><td class=y>None</td><td>Google project</td><td class=n>High</td></tr>
+<tr><td><b>PocketBase on Fly</b></td><td>No free host</td><td>≈$2–3 (VM + volume)</td><td>REST + SQLite file</td><td>Admin UI collection</td><td>~1–2 s if stopped</td><td>You run the server</td><td class=n>Yes + ops</td><td>Low, but you maintain it</td></tr>
+<tr><td><b>Google Sheet via Apps Script</b></td><td>Free, daily quotas</td><td>$0</td><td>Sheets API (OAuth)</td><td>New tab</td><td class=n>1–3 s</td><td class=y>None</td><td>No</td><td>Med, and slow</td></tr>
+<tr><td><b>GitHub API writes</b></td><td>Free</td><td>$0</td><td class=y>git pull</td><td>New file</td><td>n/a</td><td class=y>None</td><td>No</td><td>Low</td></tr>
+<tr><td><b>Val Town</b></td><td>10 MB storage</td><td>$0 (paid for more)</td><td>HTTP + SQLite</td><td>JSON column</td><td>Fast</td><td class=y>None</td><td class=n>Yes</td><td class=n>High</td></tr>
+</table></div>
+<p class=note><b>Ruled out:</b> GitHub API writes would mean putting a repo-write token in a public page, which is a non-starter. Sheets is slow and clunky to query. Firestore has no SQL. Supabase's free plan pausing (and $25 to avoid it) is the deal-breaker for bursty personal use. PocketBase is lovely but means running a server.</p>
+</section>
+
+<section id=primitives class=card>
+<h2>The primitives</h2>
+<h3>1. Two tables, so new apps never need a migration</h3>
+<pre>-- append-only log: swipes, ratings, feedback, form answers
+create table events (
+  id         bigserial primary key,
+  app        text not null,          -- 'style-swipe', 'music', 'survey-x'
+  kind       text,                   -- 'swipe', 'feedback', 'answer'
+  key        text,                   -- item id, e.g. 'e28' or a track id
+  device     text,                   -- random per-device id (see Security)
+  data       jsonb not null,         -- anything; no schema
+  created_at timestamptz default now()
+);
+create index on events (app, created_at desc);
+create index on events using gin (data);
+
+-- latest-state store: "current answers", settings, drafts
+create table docs (
+  app text, key text, data jsonb not null,
+  updated_at timestamptz default now(),
+  primary key (app, key)
+);</pre>
+<h3>2. Endpoints (one Vercel project)</h3>
+<pre>POST /api/save    {app, kind?, key?, data}       public, write-only, rate-limited
+PUT  /api/doc     {app, key, data}                public upsert into docs (allowlisted apps)
+GET  /api/mine?app=style-swipe                    returns only this device's events
+GET  /api/list?app=…&amp;since=…    Authorization: Bearer $KEVHUB_ADMIN   Kevin only
+GET  /api/health                                  warm-up / uptime ping</pre>
+<h3>3. The page helper (<code>/kevhub/kv.js</code>, under 1 KB)</h3>
+<pre>&lt;script src="../kv.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  kevhub.save('style-swipe', {id:'e28', vote:'like'}, {kind:'swipe', key:'e28'});
+  const mine = await kevhub.mine('style-swipe');   // reload past answers
+&lt;/script&gt;</pre>
+<p class=note>The helper creates a random device id once (<code>crypto.randomUUID()</code> in localStorage), sends it with each save, queues saves offline and retries, and uses <code>keepalive</code> so a swipe isn't lost if you close the tab.</p>
+<h3>4. How Kevin works with it</h3>
+<pre>export DATABASE_URL=…   # stored once on the box, chmod 600, never in the repo
+psql "$DATABASE_URL" -c "select data->>'vote', count(*) from events
+                         where app='style-swipe' group by 1"
+python3 -c "import psycopg; …"               # same thing from analysis scripts
+curl -H "Authorization: Bearer $KEVHUB_ADMIN" https://kevhub-api.vercel.app/api/list?app=music</pre>
+<p class=note>Kevin gets full SQL against the database, and the HTTP read route is a backup. A small <code>kh</code> wrapper on the box (<code>kh list music</code>, <code>kh sql "…"</code>) makes the common queries one word.</p>
+</section>
+
+<section id=security class=card>
+<h2>Security without passwords</h2>
+<ul>
+<li><b>Writes are public but blind.</b> Anyone with the URL could post to <code>/save</code>, but nobody can read through it. The worst case is junk rows, which Kevin can filter or delete.</li>
+<li><b>Guardrails on writes:</b> only requests from <code>tyler-simons.github.io</code> are accepted, payloads are capped at 16 KB, app names must match <code>^[a-z0-9-]{1,40}$</code>, and each device is limited to about 60 writes a minute (a simple count in Postgres).</li>
+<li><b>Per-device id, not a password.</b> Your phone gets a random 122-bit id on first visit. <code>/mine</code> returns only that device's rows, so the id acts as a key that can't be guessed. Nothing for you to type, ever.</li>
+<li><b>Optional "trusted device" link.</b> If we ever want writes locked down, Kevin sends you a one-time link (<code>…/kevhub/#k=…</code>) that saves a secret in your browser. You tap it once per device and never see it again.</li>
+<li><b>Kevin's reads</b> use either the database URL or a long admin token. Both live only on the box and in Vercel environment variables, never in the repo or the pages.</li>
+<li><b>Privacy:</b> data lives in a private Neon database in your account, encrypted at rest. Pages are noindex. <b>Comp and job-search info never goes in here</b>; that stays out of kevhub entirely.</li>
+</ul>
+</section>
+
+<section id=plan class=card>
+<h2>Migration plan</h2>
+<ol>
+<li><b>Day 1:</b> create the project and database, add the two tables and the endpoints, add <code>kv.js</code> to kevhub, and set up the <code>kh</code> CLI on the box. Smoke test with curl.</li>
+<li><b>Style Swipe:</b> each swipe saves as it happens (<code>app=style-swipe, kind=swipe</code>). The "Send results to Kevin" button just becomes "Done", and your Oct 17 results get backfilled.</li>
+<li><b>Music picks:</b> add 👍 / 👎 / "listened" buttons to each pick (<code>app=music, kind=feedback</code>). <code>analyze.py</code> reads them before each biweekly run instead of relying on <code>feedback.json</code> by hand.</li>
+<li><b>Shopping picks:</b> ❤️ / skip / "bought" buttons on the style shopping page.</li>
+<li><b>Later:</b> any new mini-app (ratings, quick surveys, the interview drills) just calls <code>kevhub.save('new-app', …)</code>. No backend work needed.</li>
+<li><b>Optional:</b> move kevhub hosting itself to Vercel so pages and API share one domain. That's not needed now, since GitHub Pages works fine with cross-origin requests.</li>
+</ol>
+</section>
+
+<section id=setup class=card>
+<h2>Setup checklist</h2>
+<ol>
+<li><span class=you>You</span> Say go.</li>
+<li><span class=you>You</span> In Vercel, go to <b>Storage → Create Database → Neon</b>, choose the Free plan, and accept the Marketplace terms. That's about 3 clicks, no card. (Vercel won't let Kevin accept the terms for you.)</li>
+<li><span class=you>You</span> Give Kevin a way to deploy: either approve a <code>vercel login</code> prompt on Kevin's box once, or create a Vercel token (Settings → Tokens) scoped to your account and paste it to Kevin. One time only.</li>
+<li>Kevin: create the <code>kevhub-api</code> project and connect it to the Neon database (which sets <code>DATABASE_URL</code>), then set <code>KEVHUB_ADMIN</code>.</li>
+<li>Kevin: create the tables, deploy the endpoints, and test them with curl from the box.</li>
+<li>Kevin: add <code>kv.js</code> to kevhub, wire up Style Swipe, and push.</li>
+<li><span class=you>You</span> Swipe once on your phone to confirm it works. Kevin checks that the row arrived.</li>
+<li>Kevin: wire up music feedback and the shopping picks, then update <code>analyze.py</code>.</li>
+</ol>
+</section>
+
+<section id=details class=card>
+<h2>Details and notes</h2>
+<h3>Why not Supabase, the usual answer?</h3>
+<p>For a public page writing data, Supabase is the most common pick on Reddit and HN. You expose the anon key, turn on row-level security, and allow inserts only. It's a good product. But free projects are paused after 7 days without enough database activity. They can be restored, but kevhub use is bursty (a swipe session, then quiet for two weeks), so we'd keep hitting it. Pro costs $25 a month, over budget. Neon via Vercel gives the same Postgres ergonomics for $0.</p>
+<h3>Cold starts</h3>
+<p>Vercel's Fluid compute keeps functions warm, and Vercel reports no cold start on about 99% of requests. The real delay is Neon waking up (a few hundred milliseconds after 5 idle minutes). Saves are fire-and-forget, so you'd never notice. If it ever bugs us, we can turn off sleep on Neon's paid plan for about $1–5 a month.</p>
+<h3>Why the Vercel function, and not the database straight from the browser?</h3>
+<p>The database URL is a full-access secret, so it can never go in a page. The function is the narrow, write-only gate. Kevin skips the function and uses SQL directly.</p>
+<h3>Limits we'd have to really try to hit</h3>
+<ul><li>Vercel Hobby: 1M function calls and 4 CPU-hours per rolling 30 days. If we exceed them, the feature pauses; nothing gets billed.</li><li>Neon Free: 100 CU-hours a month (about 400 hours awake at the smallest size), 1 GB storage, 5 GB transfer. A year of swipes and feedback is well under 10 MB.</li></ul>
+<h3>Lock-in</h3>
+<p>Very low. It's standard Postgres (<code>pg_dump</code> works) plus about 100 lines of function code. Kevin can also export a nightly JSON backup into the box or a private repo.</p>
+<h3>Sources</h3>
+<p class=note><a href="https://vercel.com/docs/plans/hobby">Vercel Hobby</a> · <a href="https://vercel.com/docs/functions/usage-and-pricing">Vercel Functions pricing</a> · <a href="https://neon.com/docs/introduction/plans">Neon plans</a> · <a href="https://neon.com/docs/connect/connection-latency">Neon cold starts</a> · <a href="https://supabase.com/pricing">Supabase pricing</a> · <a href="https://supabase.com/docs/guides/platform/free-project-pausing">Supabase pausing</a> · <a href="https://supabase.com/docs/guides/database/secure-data">Supabase securing data</a> · <a href="https://developers.cloudflare.com/d1/platform/pricing/">D1 pricing</a> · <a href="https://developers.cloudflare.com/changelog/post/2026-09-01-d1-free-tier-limit-enforcement/">D1 free-limit enforcement</a> · <a href="https://developers.cloudflare.com/workers/platform/pricing/">Cloudflare free tier</a> · <a href="https://upstash.com/docs/redis/overall/pricing">Upstash pricing</a> · <a href="https://firebase.google.com/docs/firestore/quotas">Firestore quotas</a> · <a href="https://docs.fly.io/about/pricing">Fly.io pricing</a> · <a href="https://pocketbase.io/faq/">PocketBase</a> · <a href="https://developers.google.com/apps-script/guides/services/quotas">Apps Script quotas</a> · <a href="https://www.val.town/limits">Val Town limits</a> · <a href="https://vercel.com/blog/scale-to-one-how-fluid-solves-cold-starts">Vercel Fluid cold starts</a> · <a href="https://www.reddit.com/r/CloudFlare/comments/1iumjcq/what_are_good_lowbudget_options_for_adding_a/">r/CloudFlare thread</a></p>
+</section>
+</main></body></html>
